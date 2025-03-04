@@ -7,9 +7,16 @@ const bookEvent = async (req, res) => {
         const { eventId } = req.body;
         const userId = req.user._id;
 
+        // Find the event
         const event = await Event.findById(eventId);
         if (!event) return res.status(404).json({ message: "Event not found" });
 
+        // ✅ Prevent booking if event is not approved
+        if (!event.approved) {
+            return res.status(400).json({ message: "Booking not allowed. Event is pending approval." });
+        }
+
+        // Create a new booking
         const booking = new Booking({ userId, eventId });
         await booking.save();
 
@@ -31,4 +38,4 @@ const getBookings = async (req, res) => {
     }
 };
 
-module.exports = { bookEvent, getBookings }; 
+module.exports = { bookEvent, getBookings };

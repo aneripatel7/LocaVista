@@ -9,62 +9,61 @@ const authenticateUser = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET);
+        // console.log("Decoded Token:", decoded); // Debugging
 
-        // Check if user is an admin or organizer
-        const user = await User.findById(decoded.id).select("-password");
+        const user = await User.findById(decoded.id);
         if (user) {
             req.user = user;
+            // console.log("Authenticated User:", req.user);
             return next();
         }
 
-        // Check if user is an attendee
-        const attendee = await Attendee.findById(decoded.id).select("-password");
+        const attendee = await Attendee.findById(decoded.id);
         if (attendee) {
             req.user = attendee;
+            // console.log("Authenticated Attendee:", req.user);
             return next();
         }
 
         return res.status(401).json({ message: "Unauthorized: User not found" });
     } catch (error) {
-        res.status(401).json({ message: "Invalid token" });
+        res.status(401).json({ message: "Invalid token", error: error.message });
     }
 };
 
-// checking if the user is an admin
+
+// Check if user is an admin
 const isAdmin = (req, res, next) => {
-    if (req.user && req.user.role === "admin") {
-        return next();
-    }
-    return res.status(403).json({ message: "Forbidden: Insufficient Permissions!" });
+    if (req.user?.role === "admin") return next();
+    return res.status(403).json({ message: "Forbidden: Admins only!" });
 };
 
-// checking if the user is an organizer
+// Check if user is an organizer
 const isOrganizer = (req, res, next) => {
-    if (req.user && req.user.role === "organizer") {
-        return next();
-    }
-    return res.status(403).json({ message: "Forbidden: Only organizers can perform this action!" });
+    if (req.user?.role === "organizer") return next();
+    return res.status(403).json({ message: "Forbidden: Organizers only!" });
 };
 
-// checking if the user is an attendee
+// Check if user is an attendee
 const isAttendee = (req, res, next) => {
     if (req.user && req.user._id) {
         return next();
     }
-    return res.status(403).json({ message: "Forbidden: Only attendees can book events!" });
+    return res.status(403).json({ message: "Forbidden: Attendees only!" });
 };
 
 
+// Verify JWT token without user role checks
 const verifyToken = (req, res, next) => {
-    const token = req.header("Authorization")?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Access Denied" });
-
     try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = verified;
+        const token = req.header("Authorization")?.split(" ")[1];
+        if (!token) return res.status(401).json({ message: "Access Denied: No token provided" });
+
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
         next();
     } catch (err) {
-        return res.status(403).json({ message: "Invalid Token" });
+        return res.status(403).json({ message: "Invalid Token", error: err.message });
     }
 };
+
 module.exports = { authenticateUser, isAdmin, isOrganizer, isAttendee, verifyToken };

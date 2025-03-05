@@ -6,8 +6,8 @@ const EventSchema = new mongoose.Schema({
     location: { type: String, required: true },
     description: { type: String },
     organizer: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    approved: { type: Boolean, default: false } 
-
+    approved: { type: Boolean, default: false },
+    ticketPrice: { type: Number, required: true } 
 });
 
 module.exports = mongoose.model("Event", EventSchema);

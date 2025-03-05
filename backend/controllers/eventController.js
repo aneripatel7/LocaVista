@@ -23,6 +23,11 @@ const createEvent = async (req, res) => {
 // Get all events
 const getAllEvents = async (req, res) => {
     try {
+        // Only admin can view all events
+        if (!req.user || req.user.role !== "admin") {
+            return res.status(403).json({ message: "Forbidden: Only admins can view all events" });
+        }
+
         const events = await Event.find();
         res.status(200).json({ events });
     } catch (error) {

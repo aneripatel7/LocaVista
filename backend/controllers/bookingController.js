@@ -38,4 +38,18 @@ const getBookings = async (req, res) => {
     }
 };
 
-module.exports = { bookEvent, getBookings };
+// Check-in API for event organizers
+const checkInUser = async (req, res) => {
+    try {
+        const { ticketId } = req.body;
+        const booking = await Booking.findOne({ ticketId }).populate("eventId");
+
+        if (!booking) return res.status(404).json({ message: "Invalid Ticket!" });
+
+        return res.status(200).json({ message: "Check-in successful!", event: booking.eventId });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+module.exports = { bookEvent, getBookings, checkInUser};

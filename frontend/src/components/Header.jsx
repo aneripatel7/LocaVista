@@ -23,8 +23,7 @@ const Header = ({ toggleSidebar }) => {
 
       {/* Right - Signup & Login */}
       <div className="flex space-x-4">
-        <Link to="/signup" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Sign Up</Link>
-        <Link to="/login" className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">Login</Link>
+      <Link to="/login" className="bg-black text-white px-4 py-2 rounded">Sign In</Link>
       </div>
     </header>
   );

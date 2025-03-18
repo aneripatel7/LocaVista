@@ -1,62 +1,72 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import googleLogo from "../assets/google-logo.png";
 
 const Login = () => {
-  const [user, setUser] = useState({ email: "", password: "" });
-  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setUser({ ...user, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", user);
-      localStorage.setItem("token", res.data.token);
-      setMessage("Login successful!");
-      setTimeout(() => navigate("/"), 2000);
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Invalid credentials");
+      const { data } = await axios.post(
+        "http://localhost:5000/api/auth/login-attendee",
+        { email, password },
+        { withCredentials: true }
+      );
+      localStorage.setItem("token", data.token);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:5000/api/auth/google";
+  };
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 w-96">
-        <h2 className="text-2xl font-bold text-center mb-4 text-gray-700">Login</h2>
-
-        {message && <p className="text-red-600 text-center">{message}</p>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">Login</h2>
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input 
+            type="email" 
+            placeholder="Email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+            className="w-full p-2 border rounded"
           />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          <input 
+            type="password" 
+            placeholder="Password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            className="w-full p-2 border rounded"
           />
-          <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700">
+          <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
             Login
           </button>
         </form>
-
-        <p className="text-center text-gray-600 mt-4">
-          Don't have an account? <Link to="/signup" className="text-blue-600 hover:underline">Sign Up</Link>
+        <button 
+          className="flex items-center justify-center w-full mt-4 border py-2 rounded hover:bg-gray-100"
+          onClick={handleGoogleLogin}
+        >
+          <img src={googleLogo} alt="Google" className="w-5 mr-2" /> Login with Google
+        </button>
+        <p className="text-center mt-4">
+          Don't have an account? <Link to="/signup" className="text-blue-500">Sign up</Link>
         </p>
         <p className="text-center mt-2">
-          <Link to="/forgot-password" className="text-blue-500 hover:underline">Forgot Password?</Link>
+          <Link to="/forgot-password" className="text-blue-500">Forgot Password?</Link>
         </p>
       </div>
     </div>

@@ -4,6 +4,18 @@ const User = require("../models/User");
 const Attendee = require("../models/Attendee");
 require("dotenv").config();
 const validator = require("validator");
+const ResetToken = require("../models/ResetToken");
+const nodemailer = require("nodemailer");
+
+
+// Configure Nodemailer transporter
+const transporter = nodemailer.createTransport({
+    service: "gmail", // or another email service
+    auth: {
+      user: process.env.EMAIL_USER,  // Your email address
+      pass: process.env.EMAIL_PASS,  // Your email app password or API key
+    },
+  });
 
 // ✅ Function to Validate Email with Messages
 const validateEmail = (email) => {
@@ -167,3 +179,150 @@ exports.logoutUser = (req, res) => {
         return res.status(500).json({ message: "Logout failed", error });
     }
 };
+
+exports.forgotPassword = async (req, res) => {
+    try {
+      const { email } = req.body;
+      const user = await Attendee.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: "User not found with that email" });
+      }
+  
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  
+      await ResetToken.findOneAndDelete({ userId: user._id });
+      const resetToken = new ResetToken({ userId: user._id, otp, expiresAt });
+      await resetToken.save();
+  
+      // Set up email options
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Your OTP for Password Reset",
+        text: `Your OTP for password reset is: ${otp}. It expires in 15 minutes.`,
+      };
+  
+      // Send the email
+      await transporter.sendMail(mailOptions);
+  
+      res.status(200).json({ message: "OTP sent to your email/phone." });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+  
+  // Reset Password: Verify OTP and update password
+  exports.resetPassword = async (req, res) => {
+    try {
+      const { email, otp, newPassword } = req.body;
+      // Find the user in the Attendee collection
+      const user = await Attendee.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: "User not found with that email" });
+      }
+  
+      // Find the reset token record
+      const resetToken = await ResetToken.findOne({ userId: user._id, otp });
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid OTP" });
+      }
+      if (resetToken.expiresAt < new Date()) {
+        return res.status(400).json({ message: "OTP has expired" });
+      }
+  
+      // Hash the new password and update the user record
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+      await user.save();
+  
+      // Remove the used reset token
+      await ResetToken.findByIdAndDelete(resetToken._id);
+  
+      res.status(200).json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+
+  exports.forgotPasswordUser = async (req, res) => {
+    try {
+      const { email } = req.body;
+      // Search for the user in the User collection
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: "User not found with that email" });
+      }
+      
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Set OTP expiry to 15 minutes from now
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      
+      // Remove any existing reset token for this user
+      await ResetToken.findOneAndDelete({ userId: user._id });
+      
+      // Create a new reset token record
+      const resetToken = new ResetToken({ userId: user._id, otp, expiresAt });
+      await resetToken.save();
+      
+      // Configure Nodemailer transporter
+      const transporter = nodemailer.createTransport({
+        service: "gmail", // You can change this to another email service if needed
+        auth: {
+          user: process.env.EMAIL_USER,  // Your email address
+          pass: process.env.EMAIL_PASS,  // Your email app password or API key
+        },
+      });
+      
+      // Set up the email options
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Your OTP for Password Reset",
+        text: `Hello ${user.name},\n\nYour OTP for password reset is: ${otp}. This OTP expires in 15 minutes.\n\nRegards,\nLocaVista Team`,
+      };
+      
+      // Send the email
+      await transporter.sendMail(mailOptions);
+      
+      res.status(200).json({ message: "OTP sent to your email/phone." });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+  
+  // Reset Password for Admin/Organizer (User model)
+  exports.resetPasswordUser = async (req, res) => {
+    try {
+      const { email, otp, newPassword } = req.body;
+      // Find the user in the User collection
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: "User not found with that email" });
+      }
+      
+      // Find the reset token record
+      const resetToken = await ResetToken.findOne({ userId: user._id, otp });
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid OTP" });
+      }
+      if (resetToken.expiresAt < new Date()) {
+        return res.status(400).json({ message: "OTP has expired" });
+      }
+      
+      // Hash the new password and update the user record
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+      await user.save();
+      
+      // Remove the used reset token
+      await ResetToken.findByIdAndDelete(resetToken._id);
+      
+      res.status(200).json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+  
+  

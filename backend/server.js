@@ -20,6 +20,7 @@ app.use(cors({
   credentials: true
 }));
 
+
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/events", require("./routes/eventRoutes"));
 app.use("/api/book", bookingRoutes);  

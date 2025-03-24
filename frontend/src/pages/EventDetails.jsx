@@ -52,19 +52,21 @@ const EventDetails = () => {
             </button>
 
             <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-                {/* Event Image */}
-                <img
-                    src={
-                        event?.eventImage?.startsWith("http")
-                            ? event.eventImage
-                            : `http://localhost:5000${event.eventImage}`
-                    }
-                    alt={event?.title || "Event Image"}
-                    className="w-full h-64 object-cover bg-gray-200"
-                    onError={(e) =>
-                        (e.target.src = "https://via.placeholder.com/300x200?text=No+Image")
-                    }
-                />
+                {/* Event Image with Fixed Frame */}
+                <div className="w-full h-80 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    <img
+                        src={
+                            event?.eventImage?.startsWith("http")
+                                ? event.eventImage
+                                : `http://localhost:5000${event.eventImage}`
+                        }
+                        alt={event?.title || "Event Image"}
+                        className="w-full h-full object-cover"
+                        onError={(e) =>
+                            (e.target.src = "https://via.placeholder.com/500x300?text=No+Image")
+                        }
+                    />
+                </div>
 
                 {/* Event Details */}
                 <div className="p-6">

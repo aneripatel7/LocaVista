@@ -59,7 +59,7 @@ const ForgetPassword = () => {
       });
       setMessage(res.data.message);
       setError("");
-      setTimeout(() => navigate("/reset-password"), 2000); // Redirect to OTP page
+      setTimeout(() => navigate("/reset-password"), 2000); 
     } catch (err) {
       setError(err.response?.data?.message || "Error sending OTP");
       setMessage("");

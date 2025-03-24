@@ -11,6 +11,8 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import EventDetails from "./pages/EventDetails";
+import ContactUs from "./pages/ContactUs";
+import Services from "./pages/Services"; 
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -30,25 +32,27 @@ const App = () => {
 
           {/* Main Content */}
           <main
-            className={`flex-1 p-6 mt-16 transition-all duration-300 ${isSidebarOpen ? "ml-64" : ""
-              }`}
+            className={`flex-1 p-6 mt-16 transition-all duration-300 ${
+              isSidebarOpen ? "ml-64" : ""
+            }`}
           >
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/events" element={<Events />} />
-              <Route path="/category/:category" element={<Home />} /> {/* ✅ Handles category filtering */}
+              <Route path="/services" element={<Services />} /> {/* ✅ Services Page */}
+              <Route path="/category/:category" element={<Home />} /> {/* ✅ Category Filtering */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/verify-otp" element={<VerifyOTP />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/event/:id" element={<EventDetails />} />
+              <Route path="/contact" element={<ContactUs />} />
             </Routes>
           </main>
         </div>
 
         {/* Footer */}
-
         <Footer />
       </div>
     </Router>

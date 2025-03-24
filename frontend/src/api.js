@@ -15,7 +15,6 @@ const api = axios.create({
 export const fetchCategories = async () => {
   try {
     const response = await api.get("/categories");
-    console.log("Fetched Categories:", response.data); // Debugging
     return response.data || []; // Ensure it returns an array
   } catch (error) {
     console.error("Error fetching categories:", error);
@@ -27,7 +26,6 @@ export const fetchCategories = async () => {
 export const fetchEvents = async () => {
   try {
     const response = await api.get("/events/approved");
-    console.log("Fetched Events:", response.data); // ✅ Debugging: Check category presence
     return response.data || [];
   } catch (error) {
     console.error("Error fetching events:", error);
@@ -50,9 +48,7 @@ export const fetchEventById = async (id) => {
 export const fetchEventsByCategory = async (category) => {
   try {
     const response = await api.get(`/events/category/${encodeURIComponent(category)}`);
-    console.log(`Fetched Events for ${category}:`, response.data);
     
-    // ✅ Ensure response is structured correctly
     return response.data?.events || response.data || [];
   } catch (error) {
     console.error(`Error fetching events for category "${category}":`, error);

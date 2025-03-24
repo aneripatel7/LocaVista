@@ -20,7 +20,7 @@ const Header = ({ toggleSidebar }) => {
       <nav className="hidden md:flex space-x-6">
         <Link to="/" className="text-gray-700 hover:text-black">Home</Link>
         <Link to="/services" className="text-gray-700 hover:text-black">Services</Link>
-        <Link to="/events" className="text-gray-700 hover:text-black">Events</Link>
+        <Link to="/dashboard" className="text-gray-700 hover:text-black">Dashboard</Link>
         <Link to="/contact" className="text-gray-700 hover:text-black">Contact Us</Link>
       </nav>
 

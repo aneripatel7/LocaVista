@@ -22,7 +22,6 @@ const Home = () => {
           eventData = await fetchEvents(); // 🔹 Fetch all events
         }
 
-        console.log("Events Data in Home.jsx:", eventData); // ✅ Debugging Log
         setEvents(eventData.length > 0 ? eventData : []);
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -38,7 +37,7 @@ const Home = () => {
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold text-center mb-6">
-        {category ? `${category} Events` : "Upcoming Events"}
+        {category ? `${category} Events` : "All Events"}
       </h1>
 
       {loading ? (

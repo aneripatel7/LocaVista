@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
-import Events from "./pages/Events";
+import Dashboard from "./pages/Dashboard";
+// import Events from "./pages/Events";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -12,7 +13,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import EventDetails from "./pages/EventDetails";
 import ContactUs from "./pages/ContactUs";
-import Services from "./pages/Services"; 
+import Services from "./pages/Services"; // ✅ Added Services Page
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -38,7 +39,7 @@ const App = () => {
           >
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/events" element={<Events />} />
+              <Route path="/Dashboard" element={<Dashboard />} />
               <Route path="/services" element={<Services />} /> {/* ✅ Services Page */}
               <Route path="/category/:category" element={<Home />} /> {/* ✅ Category Filtering */}
               <Route path="/login" element={<Login />} />
@@ -52,7 +53,6 @@ const App = () => {
           </main>
         </div>
 
-        {/* Footer */}
         <Footer />
       </div>
     </Router>

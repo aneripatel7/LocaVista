@@ -16,7 +16,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
     try {
       const data = await fetchCategories();
-      console.log("Fetched Categories:", data);
       
       // ✅ Sort categories alphabetically before setting state
       const sortedCategories = Array.isArray(data) && data.length > 0 

@@ -15,4 +15,3 @@ router.post("/forgot-password-user", forgotPasswordUser);
 router.post("/reset-password-user", resetPasswordUser);
 
 module.exports = router;
-

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchEvents, fetchEventsByCategory } from "../api";
@@ -23,7 +22,11 @@ const Home = () => {
           eventData = await fetchEvents(); // 🔹 Fetch all events
         }
 
-        setEvents(eventData.length > 0 ? eventData : []);
+        // 🔹 Filter only upcoming and ongoing events
+        const today = new Date();
+        const filteredEvents = eventData.filter(event => new Date(event.date) >= today);
+
+        setEvents(filteredEvents.length > 0 ? filteredEvents : []);
       } catch (error) {
         console.error("Error fetching events:", error);
         setError("Failed to load events. Try again later.");
@@ -38,7 +41,7 @@ const Home = () => {
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold text-center mb-6">
-        {category ? `${category} Events` : "All Events"}
+        {category ? `${category} Events` : "Upcoming & Ongoing Events"}
       </h1>
 
       {loading ? (
@@ -70,7 +73,7 @@ const Home = () => {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500">No events available.</p>
+        <p className="text-center text-gray-500">No upcoming events available.</p>
       )}
     </div>
   );

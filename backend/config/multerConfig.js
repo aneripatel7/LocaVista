@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Ensure 'uploads' directory exists
-const uploadDir = "uploads/";
+const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -38,8 +38,5 @@ const upload = multer({
   fileFilter,
   limits: { fileSize: 1024 * 1024 * 5 }, // Limit file size to 5MB
 });
-
-// Log uploaded file details for debugging
-upload.single("eventImage"); // Ensure you're using the correct field name
 
 module.exports = upload;

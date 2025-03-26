@@ -12,8 +12,8 @@ router.get("/approved", eventController.getApprovedEvents);
 router.get("/category/:category", eventController.getEventsByCategory);
 router.put("/:id/approve", authenticateUser, isAdmin, eventController.approveEvent);
 router.delete("/:id/reject", authenticateUser, isAdmin, eventController.rejectEvent);
+router.get("/past", eventController.getPastEvents);
 router.get("/:id", eventController.getEventById);
-
 
 
 module.exports = router;

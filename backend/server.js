@@ -24,7 +24,6 @@ app.use(
 );
 
 
-
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/events", require("./routes/eventRoutes"));
 app.use("/api/book", bookingRoutes);  
@@ -45,14 +44,6 @@ app.get("/api/categories", (req, res) => {
   res.json(categories);
 });
 
-app.get("/api/events", async (req, res) => {
-  try {
-    const events = await Event.find(); // Fetch all events from MongoDB
-    res.json(events);
-  } catch (error) {
-    res.status(500).json({ message: "Server Error" });
-  }
-});
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

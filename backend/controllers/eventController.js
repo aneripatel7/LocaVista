@@ -202,6 +202,24 @@ const getEventsByCategory = async (req, res) => {
     }
 };
 
+const getPastEvents = async (req, res) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize today's date
+  
+      const pastEvents = await Event.find({
+        date: { $lt: today }, // Find events with dates in the past
+        approved: true, // Only show approved events
+      });
+  
+      res.status(200).json(pastEvents);
+    } catch (error) {
+      console.error("Error fetching past events:", error);
+      res.status(500).json({ message: "Server error fetching past events" });
+    }
+  };  
+
+  
 module.exports = {
     createEvent,
     getAllEvents,
@@ -209,5 +227,6 @@ module.exports = {
     approveEvent,
     rejectEvent,
     getApprovedEvents,
-    getEventsByCategory
+    getEventsByCategory,
+    getPastEvents
 };

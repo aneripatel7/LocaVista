@@ -4,18 +4,9 @@ const User = require("../models/User");
 const Attendee = require("../models/Attendee");
 require("dotenv").config();
 const validator = require("validator");
-const ResetToken = require("../models/ResetToken");
-const nodemailer = require("nodemailer");
-
-
-// Configure Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail", // or another email service
-  auth: {
-    user: process.env.EMAIL_USER,  // Your email address
-    pass: process.env.EMAIL_PASS,  // Your email app password or API key
-  },
-});
+const sendEmail = require('../utils/sendEmail');
+const ResetToken  = require('../models/PasswordResetOTP');
+const crypto = require('crypto');
 
 // ✅ Function to Validate Email with Messages
 const validateEmail = (email) => {
@@ -78,7 +69,7 @@ const validatePassword = (password) => {
   return { valid: true, message: "Valid password." };
 };
 
-// ✅ Register Admin/Organizer
+// ✅ Register Organizer
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
   try {
@@ -105,6 +96,7 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 // ✅ Register Attendee
 exports.registerAttendee = async (req, res) => {
@@ -138,19 +130,54 @@ exports.registerAttendee = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
+    // Find user in the User collection (for Admin and Organizer)
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
+    // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token });
+    // Create JWT token, distinguishing between Admin and Organizer
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    // Send response based on user role
+    if (user.role === 'admin') {
+      res.json({
+        message: "Admin login successful",
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        }
+      });
+    } else if (user.role === 'organizer') {
+      res.json({
+        message: "Organizer login successful",
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        }
+      });
+    } else {
+      res.status(400).json({ message: "Unknown role" });
+    }
+
   } catch (err) {
     console.error("Login Error:", err);
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 // ✅ Login Attendee
 exports.loginAttendee = async (req, res) => {
@@ -159,11 +186,32 @@ exports.loginAttendee = async (req, res) => {
     const attendee = await Attendee.findOne({ email });
     if (!attendee) return res.status(400).json({ message: "Attendee not found" });
 
+    // If attendee registered via Google, they won't have a password
+    if (!attendee.password) {
+      return res.status(400).json({ message: "This account is linked with Google. Please login using Google." });
+    }
+
     const isMatch = await bcrypt.compare(password, attendee.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: attendee._id, role: "attendee" }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token });
+    // Create JWT token
+    const token = jwt.sign(
+      { id: attendee._id, email: attendee.email, role: 'attendee' },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      attendee: {
+        id: attendee._id,
+        name: attendee.name,
+        email: attendee.email,
+        profilePicture: attendee.profilePicture,
+        interests: attendee.interests
+      }
+    });
   } catch (err) {
     console.error("Login Attendee Error:", err);
     res.status(500).json({ message: "Server Error" });
@@ -181,154 +229,96 @@ exports.logoutUser = (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
   try {
-    const { email } = req.body;
-    const user = await Attendee.findOne({ email });
+    // 1. Check if user exists
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found with that email" });
+      return res.status(404).json({ message: 'User not found with this email' });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // 2. Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+
+    // 3. Set OTP expiry (15 mins)
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    await ResetToken.findOneAndDelete({ userId: user._id });
-    const resetToken = new ResetToken({ userId: user._id, otp, expiresAt });
-    await resetToken.save();
+    // 4. Save or update reset token
+    await ResetToken.findOneAndUpdate(
+      { userId: user._id },
+      { otp, expiresAt },
+      { upsert: true, new: true }
+    );
 
-    // Set up email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Your OTP for Password Reset",
-      text: `Your OTP for password reset is: ${otp}. It expires in 15 minutes.`,
-    };
+    // 5. Send email with OTP
+    await sendEmail(user.email, 'Password Reset OTP', `Your OTP is: ${otp}`);
 
-    // Send the email
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ message: "OTP sent to your email/phone." });
+    res.status(200).json({ message: 'OTP sent to your email' });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Reset Password: Verify OTP and update password
+
+exports.verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const otpRecord = await PasswordResetOTP.findOne({
+      userId: user._id,
+      otp,
+      expiresAt: { $gt: new Date() } // not expired
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // Optionally delete the OTP now (one-time use)
+    await PasswordResetOTP.deleteMany({ userId: user._id });
+
+    // Respond with a success message or a temporary token if you want extra security
+    res.status(200).json({ message: 'OTP verified successfully', userId: user._id });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+
+// Reset Password for Admin/Organizer (User model)
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    // Find the user in the Attendee collection
-    const user = await Attendee.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found with that email" });
-    }
 
-    // Find the reset token record
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    // Check if ResetToken exists
     const resetToken = await ResetToken.findOne({ userId: user._id, otp });
-    if (!resetToken) {
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
-    if (resetToken.expiresAt < new Date()) {
-      return res.status(400).json({ message: "OTP has expired" });
+    if (!resetToken) return res.status(400).json({ message: "Invalid OTP" });
+
+    // Check if OTP expired
+    if (resetToken.expiresAt < Date.now()) {
+      await ResetToken.deleteOne({ _id: resetToken._id }); // delete expired token
+      return res.status(400).json({ message: "OTP expired" });
     }
 
-    // Hash the new password and update the user record
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    // Update user password
+    user.password = newPassword;
     await user.save();
 
-    // Remove the used reset token
-    await ResetToken.findByIdAndDelete(resetToken._id);
+    // Delete the OTP token
+    await ResetToken.deleteOne({ _id: resetToken._id });
 
-    res.status(200).json({ message: "Password has been reset successfully" });
+    return res.status(200).json({ message: "Password reset successful" });
+
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    return res.status(500).json({ message: "Server error" });
   }
 };
-
-exports.forgotPasswordUser = async (req, res) => {
-  try {
-    const { email } = req.body;
-    // Search for the user in the User collection
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found with that email" });
-    }
-
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    // Set OTP expiry to 15 minutes from now
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-    // Remove any existing reset token for this user
-    await ResetToken.findOneAndDelete({ userId: user._id });
-
-    // Create a new reset token record
-    const resetToken = new ResetToken({ userId: user._id, otp, expiresAt });
-    await resetToken.save();
-
-    // Configure Nodemailer transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail", // You can change this to another email service if needed
-      auth: {
-        user: process.env.EMAIL_USER,  // Your email address
-        pass: process.env.EMAIL_PASS,  // Your email app password or API key
-      },
-    });
-
-    // Set up the email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Your OTP for Password Reset",
-      text: `Hello ${user.name},\n\nYour OTP for password reset is: ${otp}. This OTP expires in 15 minutes.\n\nRegards,\nLocaVista Team`,
-    };
-
-    // Send the email
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ message: "OTP sent to your email/phone." });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-// Reset Password for Admin/Organizer (User model)
-exports.resetPasswordUser = async (req, res) => {
-  try {
-    const { email, otp, newPassword } = req.body;
-
-    // Find the user in the User collection
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found with that email" });
-    }
-
-    // Find the reset token record
-    const resetToken = await ResetToken.findOne({ userId: user._id, otp });
-    if (!resetToken) {
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
-    if (resetToken.expiresAt < new Date()) {
-      return res.status(400).json({ message: "OTP has expired" });
-    }
-
-    // Validate new password
-    const passwordCheck = validatePassword(newPassword);
-    if (!passwordCheck.valid) {
-      return res.status(400).json({ message: passwordCheck.message });
-    }
-
-    // Hash the new password and update the user record
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    await user.save();
-
-    // Remove the used reset token
-    await ResetToken.findByIdAndDelete(resetToken._id);
-
-    res.status(200).json({ message: "Password has been reset successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-

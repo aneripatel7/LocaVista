@@ -31,7 +31,6 @@ const updateProfile = async (req, res) => {
     try {
         const userId = req.user._id;
         let { name, email, interests } = req.body;
-        const profilePicture = req.file ? `/uploads/${req.file.filename}` : undefined;
 
         // Validate email if it's being updated
         if (email && !isValidEmail(email)) {
@@ -51,7 +50,6 @@ const updateProfile = async (req, res) => {
         if (name) updatedData.name = name;
         if (email) updatedData.email = email;
         if (interests) updatedData.interests = interests;
-        if (profilePicture) updatedData.profilePicture = profilePicture;
 
         const attendee = await Attendee.findByIdAndUpdate(userId, updatedData, { new: true }).select("-password");
 

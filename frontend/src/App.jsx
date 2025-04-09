@@ -48,6 +48,8 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/event/:id" element={<EventDetails />} />
               <Route path="/contact" element={<ContactUs />} />
+              {/* <Route path="/organizerDashboard" element={<OrganizerDashboard />} /> */}
+
             </Routes>
           </main>
         </div>

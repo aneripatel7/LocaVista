@@ -1,61 +1,62 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
-// Create the AuthContext
 export const AuthContext = createContext();
 
-// Custom hook to use the AuthContext
 export const useAuth = () => useContext(AuthContext);
 
-// AuthProvider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    // Load user from any available keys
+    const attendee = localStorage.getItem("attendee");
+    const organizer = localStorage.getItem("organizer");
     const storedToken = localStorage.getItem("token");
 
-    if (storedUser && storedToken && storedToken !== "undefined") {
+    const storedUser = attendee || organizer || localStorage.getItem("user");
+
+    if (storedUser) {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setToken(storedToken);
-      } catch (err) {
-        console.warn("Corrupt user data:", err);
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Invalid stored user data", e);
       }
-    } else if (storedToken && storedToken !== "undefined") {
-      // fallback: decode token only if user data not found
+    }
+
+    if (storedToken && storedToken !== "undefined") {
       try {
-        const decoded = jwtDecode(storedToken);
-        setUser(decoded);
         setToken(storedToken);
       } catch (err) {
         console.error("Invalid token:", err.message);
-        localStorage.removeItem("token");
       }
     }
   }, []);
 
-  // Login function
   const login = (userData, newToken) => {
-    if (newToken && newToken !== "undefined") {
+    if (userData) {
+      // Save based on role
+      if (userData.role === "organizer") {
+        localStorage.setItem("organizer", JSON.stringify(userData));
+      } else {
+        localStorage.setItem("attendee", JSON.stringify(userData));
+      }
+      localStorage.setItem("user", JSON.stringify(userData)); // fallback for future
+      setUser(userData);
+    }
+
+    if (newToken) {
       localStorage.setItem("token", newToken);
       setToken(newToken);
     }
-
-    if (userData) {
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-    }
   };
 
-  // Logout function
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("attendee");
+    localStorage.removeItem("organizer");
     setUser(null);
     setToken(null);
   };

@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import defaultAvatar from "../assets/default-avatar.png";
-import ProfileDropdown from "./ProfileDropdown";
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const handleLogout = () => {
     logout();

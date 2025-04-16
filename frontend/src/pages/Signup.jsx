@@ -1,20 +1,19 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import defaultAvatar from "../assets/default-avatar.png";
-import { AuthContext } from "../context/AuthContext"; // ✅ Named import
+import { useAuth } from "../context/AuthContext"; // ✅ Import hook instead of useContext
 
 const Signup = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
-  const [role, setRole] = useState("attendee"); // default
+  const [role, setRole] = useState("attendee");
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { setUser } = useContext(AuthContext); // ✅ Access context
+  const { login } = useAuth(); // ✅ Use login function from context
 
-  // Get ?role=attendee or organizer from URL
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const selectedRole = queryParams.get("role");
@@ -30,40 +29,46 @@ const Signup = () => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
-  
+
     try {
       const apiUrl =
         role === "attendee"
           ? "http://localhost:5000/api/auth/register-attendee"
           : "http://localhost:5000/api/auth/register";
-  
-      // Include role in payload for organizer
+
       const payload =
         role === "organizer"
-          ? { ...formData, role: "organizer" } // ✅ explicitly set organizer role
+          ? { ...formData, role: "organizer" }
           : formData;
-  
+
       const res = await axios.post(apiUrl, payload);
-  
+
+      // Debugging: Log the API response to check its structure
+      console.log("API Response:", res.data);
+
+      // Handle response based on the role
       const newUser =
         role === "organizer"
           ? { ...res.data.user, photoURL: defaultAvatar }
-          : { ...res.data.attendee, photoURL: defaultAvatar };
-  
-      localStorage.setItem(role, JSON.stringify(newUser));
-      setUser(newUser); // ✅ Update global context
-  
+          : { ...res.data.attendee || res.data.user, photoURL: defaultAvatar }; // Handle fallback for attendee
+
+      // Ensure that the new user data is correctly being passed to the login function
+      console.log("Logged in User Data:", newUser);
+
+      // ✅ Use login from context to set user + token
+      login(newUser, res.data.token || "");
+
       setSuccessMsg(`${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully!`);
-  
+
       setTimeout(() => {
         navigate(role === "organizer" ? "/organizerDashboard" : "/dashboard");
+        window.location.reload(); // ✅ Force reload to apply context everywhere
       }, 1500);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.response?.data?.message || "Signup failed. Please try again.");
     }
   };
-  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-300">

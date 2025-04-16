@@ -69,7 +69,6 @@ const validatePassword = (password) => {
   return { valid: true, message: "Valid password." };
 };
 
-// ✅ Register Organizer
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
   try {
@@ -90,12 +89,24 @@ exports.register = async (req, res) => {
     user = new User({ name, email, password: hashedPassword, role });
     await user.save();
 
-    res.json({ message: "Registered successfully!" });
+    // 🔐 Generate JWT Token
+    const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, 'your_jwt_secret', { expiresIn: '1h' });
+
+    res.json({
+      message: "Registered successfully!",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (err) {
     console.error("Register Error:", err);
     res.status(500).json({ message: "Server Error" });
   }
-}; 
+};
 
 
 // ✅ Register Attendee
@@ -119,12 +130,25 @@ exports.registerAttendee = async (req, res) => {
     attendee = new Attendee({ name, email, password: hashedPassword });
     await attendee.save();
 
-    res.json({ message: "Attendee registered successfully!" });
+    // 🔐 Generate JWT Token
+    const token = jwt.sign({ id: attendee._id, email: attendee.email, role: "attendee" }, 'your_jwt_secret', { expiresIn: '1h' });
+
+    res.json({
+      message: "Attendee registered successfully!",
+      token,
+      user: {
+        id: attendee._id,
+        name: attendee.name,
+        email: attendee.email,
+        role: "attendee"
+      }
+    });
   } catch (err) {
     console.error("Register Attendee Error:", err);
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 // ✅ Login Admin/Organizer
 exports.login = async (req, res) => {

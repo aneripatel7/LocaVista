@@ -11,6 +11,7 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import EventDetails from "./pages/EventDetails";
+import ContactOrganizer  from "./pages/ContactOrganizer";
 import ContactUs from "./pages/ContactUs";
 import Services from "./pages/Services";
 
@@ -38,7 +39,7 @@ const App = () => {
           >
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} /> {/* ✅ Corrected Dashboard route */}
+              <Route path="/dashboard" element={<Dashboard />} /> 
               <Route path="/services" element={<Services />} />
               <Route path="/category/:category" element={<Home />} />
               <Route path="/login" element={<Login />} />
@@ -48,6 +49,8 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/event/:id" element={<EventDetails />} />
               <Route path="/contact" element={<ContactUs />} />
+              <Route path="/contact-organizer/:organizerId" element={<ContactOrganizer />} />
+
               {/* <Route path="/organizerDashboard" element={<OrganizerDashboard />} /> */}
 
             </Routes>

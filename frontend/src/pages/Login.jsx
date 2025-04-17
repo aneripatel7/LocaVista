@@ -12,6 +12,7 @@ const Login = () => {
   const location = useLocation();
   const { login } = useAuth();
 
+  // Update role based on URL query params
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const selectedRole = queryParams.get("role");
@@ -66,6 +67,12 @@ const Login = () => {
     }
   };
 
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    // Update the URL query string to reflect the selected role
+    navigate(`?role=${newRole}`);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
@@ -76,22 +83,18 @@ const Login = () => {
         <div className="flex justify-center mb-6 space-x-4">
           <button
             type="button"
-            onClick={() => setRole("attendee")}
+            onClick={() => handleRoleChange("attendee")}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-              role === "attendee"
-                ? "bg-black text-white"
-                : "bg-gray-200 text-black"
+              role === "attendee" ? "bg-black text-white" : "bg-gray-200 text-black"
             }`}
           >
             Attendee
           </button>
           <button
             type="button"
-            onClick={() => setRole("organizer")}
+            onClick={() => handleRoleChange("organizer")}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-              role === "organizer"
-                ? "bg-black text-white"
-                : "bg-gray-200 text-black"
+              role === "organizer" ? "bg-black text-white" : "bg-gray-200 text-black"
             }`}
           >
             Organizer

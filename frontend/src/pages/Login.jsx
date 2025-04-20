@@ -10,7 +10,7 @@ const Login = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login } = useAuth(); // Use the login from context
 
   // Update role based on URL query params
   useEffect(() => {
@@ -42,22 +42,24 @@ const Login = () => {
       const res = await axios.post(apiUrl, formData);
 
       if (role === "attendee") {
-        const attendee = res.data.attendee;
+        const { attendee, token } = res.data;
         localStorage.setItem("attendee", JSON.stringify(attendee));
-        login(attendee);
+        localStorage.setItem("token", token); // Store token in localStorage
+        login(attendee, token); // Call login function from context
         navigate("/dashboard");
+        
       } else {
         const { token, user } = res.data;
         const decodedUser = user || jwtDecode(token);
 
         localStorage.setItem("token", token);
         localStorage.setItem("organizer", JSON.stringify(decodedUser));
-        login(decodedUser);
+        login(decodedUser, token); // Call login function from context
 
         if (decodedUser.role === "admin") {
-          navigate("/adminDashboard");
+          navigate("/AdminDashboard");
         } else {
-          navigate("/organizerDashboard");
+          navigate("/OrganizerDashboard");
         }
       }
     } catch (err) {

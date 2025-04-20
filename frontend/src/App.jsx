@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard"; // ✅ Only one import for Dashboard
+import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -11,7 +11,11 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import EventDetails from "./pages/EventDetails";
-import ContactOrganizer  from "./pages/ContactOrganizer";
+import ContactOrganizer from "./pages/ContactOrganizer";
+import EventPayment from "./pages/EventPayment";
+import BookingSuccess from "./pages/BookingSuccess";
+import AdminDashboard from "./pages/AdminDashboard";
+// import OrganizerDashboard from "./pages/OrganizerDashboard";
 import ContactUs from "./pages/ContactUs";
 import Services from "./pages/Services";
 
@@ -33,13 +37,12 @@ const App = () => {
 
           {/* Main Content */}
           <main
-            className={`flex-1 p-6 mt-16 transition-all duration-300 ${
-              isSidebarOpen ? "ml-64" : ""
-            }`}
+            className={`flex-1 p-6 mt-16 transition-all duration-300 ${isSidebarOpen ? "ml-64" : ""
+              }`}
           >
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} /> 
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
               <Route path="/category/:category" element={<Home />} />
               <Route path="/login" element={<Login />} />
@@ -49,10 +52,10 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/event/:id" element={<EventDetails />} />
               <Route path="/contact" element={<ContactUs />} />
+              <Route path="/event-payment/:id" element={<EventPayment />} />
+              <Route path="/booking-success/:ticketId" element={<BookingSuccess />} />
+              <Route path="/adminDashboard" element={<AdminDashboard />} />
               <Route path="/contact-organizer/:organizerId" element={<ContactOrganizer />} />
-
-              {/* <Route path="/organizerDashboard" element={<OrganizerDashboard />} /> */}
-
             </Routes>
           </main>
         </div>

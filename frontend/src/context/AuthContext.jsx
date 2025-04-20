@@ -10,12 +10,11 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
 
   useEffect(() => {
-    // Load user from any available keys
     const attendee = localStorage.getItem("attendee");
     const organizer = localStorage.getItem("organizer");
     const storedToken = localStorage.getItem("token");
 
-    const storedUser = attendee || organizer || localStorage.getItem("user");
+    const storedUser = attendee || organizer;
 
     if (storedUser) {
       try {
@@ -26,23 +25,17 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (storedToken && storedToken !== "undefined") {
-      try {
-        setToken(storedToken);
-      } catch (err) {
-        console.error("Invalid token:", err.message);
-      }
+      setToken(storedToken);
     }
   }, []);
 
   const login = (userData, newToken) => {
     if (userData) {
-      // Save based on role
       if (userData.role === "organizer") {
         localStorage.setItem("organizer", JSON.stringify(userData));
       } else {
         localStorage.setItem("attendee", JSON.stringify(userData));
       }
-      localStorage.setItem("user", JSON.stringify(userData)); // fallback for future
       setUser(userData);
     }
 
@@ -53,16 +46,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("attendee");
-    localStorage.removeItem("organizer");
+    localStorage.clear();
     setUser(null);
     setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, setUser }}>
+    <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

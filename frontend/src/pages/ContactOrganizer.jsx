@@ -9,7 +9,7 @@ const ContactOrganizer = () => {
 
   useEffect(() => {
     // Simulated user fetch from localStorage
-    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const storedUser = JSON.parse(localStorage.getItem("attendee"));
     if (storedUser) {
       setUser({ name: storedUser.name, email: storedUser.email });
     }

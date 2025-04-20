@@ -8,4 +8,3 @@ router.get("/my-bookings", authenticateUser, isAttendee, bookingController.getBo
 router.post("/check-in", authenticateUser, isOrganizer, bookingController.checkInUser);
 
 module.exports = router;
-

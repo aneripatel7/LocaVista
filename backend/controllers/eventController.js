@@ -219,6 +219,30 @@ const getPastEvents = async (req, res) => {
     }
   };  
 
+  const updateEvent = async (req, res) => {
+    try {
+      const event = await Event.findById(req.params.id);
+  
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+  
+      // Only the event's creator can update it
+      if (event.organizerId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "Unauthorized to update this event" });
+      }
+  
+      // Update fields
+      Object.assign(event, req.body);
+      await event.save();
+  
+      res.status(200).json({ message: "Event updated successfully", event });
+    } catch (err) {
+      console.error("Update error:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  
   
 module.exports = {
     createEvent,
@@ -228,5 +252,6 @@ module.exports = {
     rejectEvent,
     getApprovedEvents,
     getEventsByCategory,
-    getPastEvents
+    getPastEvents,
+    updateEvent
 };

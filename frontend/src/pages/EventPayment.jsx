@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const EventPayment = () => {
   const { id } = useParams();
@@ -8,6 +8,19 @@ const EventPayment = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [alreadyBooked, setAlreadyBooked] = useState(null);
+  const [showModal, setShowModal] = useState(false); // State to show/hide modal
+  const [modalMessage, setModalMessage] = useState(""); // Modal message content
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false); // Disable button flag
+
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate, token]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -16,14 +29,26 @@ const EventPayment = () => {
         setEvent(res.data);
       } catch (err) {
         setError("Error loading event. Please try again later.");
-        console.error("Error loading event:", err);
+      }
+    };
+
+    const checkBooking = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/book/my-bookings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const booked = res.data.find((booking) => booking.event._id === id);
+        if (booked) setAlreadyBooked(booked);
+      } catch (err) {
+        console.error("Booking check failed:", err);
       }
     };
 
     fetchEvent();
-  }, [id]);
+    checkBooking();
+  }, [id, token]);
 
-  // Load Razorpay script
   const loadRazorpay = (src) => {
     return new Promise((resolve) => {
       const script = document.createElement("script");
@@ -35,108 +60,99 @@ const EventPayment = () => {
   };
 
   const handlePayment = async () => {
-    const token = localStorage.getItem("token");
-    let user = null;
-
-    try {
-      user = JSON.parse(localStorage.getItem("user"));
-    } catch (err) {
-      console.error("Invalid user object in localStorage");
-    }
-
-    if (!token || !user || !user.name || !user.email) {
+    if (!user?.name || !user?.email) {
       alert("Please login first");
       navigate("/login");
       return;
     }
 
-    const razorpayLoaded = await loadRazorpay("https://checkout.razorpay.com/v1/checkout.js");
+    // Disable the button to prevent multiple clicks
+    setIsButtonDisabled(true);
 
-    if (!razorpayLoaded) {
-      alert("Failed to load Razorpay");
-      return;
-    }
+    const razorpayLoaded = await loadRazorpay("https://checkout.razorpay.com/v1/checkout.js");
+    if (!razorpayLoaded) return alert("Failed to load Razorpay");
 
     try {
       setLoading(true);
-      setError("");
-
-      // Backend API call to initiate payment
       const response = await axios.post(
         "http://localhost:5000/api/payments/initiate",
-        {
-          eventId: id,
-          amount: event.ticketPrice * 100, // in paise (Razorpay expects amount in paise)
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { eventId: id, amount: event.ticketPrice },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const { order } = response.data;
 
       const options = {
-        key: "rzp_test_WmSUWjlfCVCx0y", // your Razorpay key
+        key: "rzp_test_WmSUWjlfCVCx0y", // Replace with your Razorpay key
         amount: order.amount,
         currency: order.currency,
         name: "Locavista Booking",
         description: event.title,
         order_id: order.id,
         handler: async function (paymentResponse) {
-          // On success, you can handle the response, e.g., save payment info to the backend
-          alert("Payment Successful!");
+          try {
+            const verifyRes = await axios.post(
+              "http://localhost:5000/api/payments/verify-payment",
+              { paymentResponse, orderId: order.id },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-          // Backend call to verify payment and create a booking
-          const paymentVerificationResponse = await axios.post(
-            "http://localhost:5000/api/payments/verify-payment",
-            {
-              paymentResponse, // Pass the Razorpay payment response
-              orderId: order.id,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+            if (verifyRes.data.success) {
+              const booking = verifyRes.data.booking;
+
+              // Send the confirmation email
+              await axios.post("http://localhost:5000/api/sendEmail/booking-confirmation", {
+                email: user.email,
+                name: user.name,
+                eventTitle: event.title,
+                ticketId: booking.ticketId,
+                amount: event.ticketPrice,
+                eventDate: event.date,
+              });
+
+              // Show modal with success message
+              setModalMessage("Your event ticket has been sent to your email!");
+              setShowModal(true);
+
+              // Redirect to Dashboard after modal is closed
+              setTimeout(() => {
+                navigate("/dashboard", { state: { message: "Event booked successfully!" } });
+              }, 3000); // Redirect after 3 seconds
+            } else {
+              setModalMessage("Payment verification failed.");
+              setShowModal(true);
             }
-          );
-
-          // On successful verification, get booking details and navigate to success page
-          if (paymentVerificationResponse.data.success) {
-            const booking = paymentVerificationResponse.data.booking;
-            navigate(`/booking-success/${booking.ticketId}`, { state: { booking } });
-          } else {
-            alert("Payment verification failed. Please try again.");
+          } catch (err) {
+            console.error("Verification error:", err);
+            setModalMessage("Payment verification failed.");
+            setShowModal(true);
+          } finally {
+            setIsButtonDisabled(false); // Re-enable the button in case of error
           }
         },
         prefill: {
           name: user.name,
           email: user.email,
         },
-        theme: {
-          color: "#00BFFF", // Custom theme color for Razorpay popup
-        },
+        theme: { color: "#00BFFF" },
       };
 
-      // Initialize Razorpay
       const razorpay = new window.Razorpay(options);
+      razorpay.on("payment.failed", (response) => {
+        setModalMessage("Payment failed: " + response.error.description);
+        setShowModal(true);
+        setIsButtonDisabled(false); // Re-enable the button if payment fails
+      });
+
       razorpay.open();
     } catch (err) {
-      setError("An error occurred during the payment process. Please try again.");
-      console.error("Payment initiation error:", err);
+      setError("Payment process error. Try again.");
+      console.error("Payment error:", err);
+      setIsButtonDisabled(false); // Re-enable the button if there’s an error
     } finally {
       setLoading(false);
     }
   };
-
-  if (loading) {
-    return <div className="text-center mt-20 text-gray-500">Loading payment...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center mt-20 text-red-500">{error}</div>;
-  }
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -149,35 +165,61 @@ const EventPayment = () => {
 
       {event ? (
         <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
-          <div className="p-6 flex flex-col justify-between">
+          <div className="p-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{event.title}</h1>
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 mb-1">
               <strong>Date:</strong> {new Date(event.date).toLocaleDateString()}
             </p>
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 mb-1">
               <strong>Location:</strong> {event.location}
             </p>
             <p className="text-sm text-gray-600 mb-4">
               <strong>Price:</strong> ₹{event.ticketPrice}
             </p>
-
-            <p className="text-gray-700 text-sm leading-relaxed">
-              <strong>Description:</strong> <br />
-              {event.description}
+            <p className="text-gray-700 text-sm leading-relaxed mb-6">
+              <strong>Description:</strong><br />{event.description}
             </p>
 
-            <div className="mt-6">
+            {alreadyBooked ? (
+              <>
+                <p className="text-green-600 font-semibold mb-4">🎟 You’ve already booked this event.</p>
+                <button
+                  onClick={resendTicket}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition"
+                >
+                  Resend Ticket Email
+                </button>
+              </>
+            ) : (
               <button
                 onClick={handlePayment}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+                disabled={isButtonDisabled} // Disable the button during payment
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
               >
-                Proceed to Payment
+                {isButtonDisabled ? "Processing..." : "Proceed to Payment"}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center text-gray-500">Event details not found.</div>
+      )}
+
+      {/* Modal Popup */}
+      {showModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-semibold text-center">{modalMessage}</h2>
+            <div className="mt-4 flex justify-center gap-4">
+              <button
+                onClick={() => setShowModal(false)}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg"
+              >
+                Close
               </button>
             </div>
           </div>
         </div>
-      ) : (
-        <div className="text-center text-gray-500">Event details are unavailable.</div>
       )}
     </div>
   );

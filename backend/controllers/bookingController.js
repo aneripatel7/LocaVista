@@ -1,6 +1,8 @@
 
 const Booking = require("../models/Booking");
+const User = require("../models/User");
 const Event = require("../models/Event");
+const { sendPaymentConfirmationEmail } = require("../utils/sendEmail"); // Import the email functions
 
 // Book an event
 const bookEvent = async (req, res) => {
@@ -29,6 +31,10 @@ const bookEvent = async (req, res) => {
         const booking = new Booking({ userId, eventId, status: "confirmed" }); // Adding status for future tracking
         await booking.save();
 
+        // Send a booking confirmation email
+        const user = await User.findById(userId); // Fetch the user details
+        await sendPaymentConfirmationEmail(user.email, user.name, event.title, booking.ticketId, event.ticketPrice, event.date);
+
         res.status(201).json({ message: "Event booked successfully!", booking });
     } catch (error) {
         console.error("Booking error:", error);
@@ -36,26 +42,27 @@ const bookEvent = async (req, res) => {
     }
 };
 
+
 // Get all bookings for a user
 const getBookings = async (req, res) => {
     try {
         const userId = req.user._id;
+
+        // Find bookings for the logged-in user and populate event details
         const bookings = await Booking.find({ userId })
             .populate({
                 path: "eventId",
-                select: "title date location eventImage category",
+                select: "title date location eventImage category", // Select specific fields
             });
 
-        if (!bookings.length) {
-            return res.status(404).json({ message: "No bookings found." });
-        }
-
-        res.status(200).json({ bookings });
+        // Respond with 200 even if no bookings (let frontend handle empty state)
+        return res.status(200).json({ bookings });
     } catch (error) {
         console.error("Error fetching bookings:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 // Check-in API for event organizers
 const checkInUser = async (req, res) => {
@@ -87,4 +94,24 @@ const checkInUser = async (req, res) => {
     }
 };
 
-module.exports = { bookEvent, getBookings, checkInUser };
+const getBookingsForOrganizer = async (req, res) => {
+    try {
+        const organizerId = req.user._id;
+
+        // Get all events created by this organizer
+        const events = await Event.find({ organizer: organizerId });
+
+        const eventIds = events.map(event => event._id);
+
+        // Get all bookings for these events and populate user info
+        const bookings = await Booking.find({ eventId: { $in: eventIds } })
+            .populate("eventId", "title date location") // optional: include event details
+            .populate("userId", "name email"); // show attendee info
+
+        res.status(200).json({ success: true, bookings });
+    } catch (error) {
+        console.error("Error fetching organizer bookings:", error);
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+}
+module.exports = { bookEvent, getBookings, checkInUser ,getBookingsForOrganizer};

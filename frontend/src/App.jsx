@@ -13,9 +13,8 @@ import Footer from "./components/Footer";
 import EventDetails from "./pages/EventDetails";
 import ContactOrganizer from "./pages/ContactOrganizer";
 import EventPayment from "./pages/EventPayment";
-import BookingSuccess from "./pages/BookingSuccess";
-import AdminDashboard from "./pages/AdminDashboard";
 // import OrganizerDashboard from "./pages/OrganizerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import ContactUs from "./pages/ContactUs";
 import Services from "./pages/Services";
 
@@ -53,8 +52,8 @@ const App = () => {
               <Route path="/event/:id" element={<EventDetails />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/event-payment/:id" element={<EventPayment />} />
-              <Route path="/booking-success/:ticketId" element={<BookingSuccess />} />
               <Route path="/adminDashboard" element={<AdminDashboard />} />
+              {/* <Route path="/organizerdashboard" element={<OrganizerDashboard />} /> */}
               <Route path="/contact-organizer/:organizerId" element={<ContactOrganizer />} />
             </Routes>
           </main>

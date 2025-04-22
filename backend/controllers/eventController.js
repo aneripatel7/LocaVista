@@ -15,13 +15,6 @@ const normalizeCategory = (category) => {
     return validCategories.includes(formatted) ? formatted : null;
 };
 
-// Function to format image URL correctly
-// const formatImagePath = (imagePath) => {
-//     if (!imagePath) return "https://via.placeholder.com/300x200?text=No+Image";
-//     if (imagePath.startsWith("http")) return imagePath;
-//     return `/uploads/${imagePath.replace(/^\/?uploads\//, "")}`;
-// };
-
 // Function to format date correctly
 const formatDate = (date) => {
     return date ? new Date(date).toISOString().split("T")[0] : null;

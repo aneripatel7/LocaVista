@@ -61,7 +61,7 @@ const Signup = () => {
       setSuccessMsg(`${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully!`);
 
       setTimeout(() => {
-        navigate(role === "organizer" ? "/organizerDashboard" : "/dashboard");
+        navigate(role === "organizer" ? "/OrganizerDashboard" : "/dashboard");
         window.location.reload(); // ✅ Force reload to apply context everywhere
       }, 1500);
     } catch (err) {

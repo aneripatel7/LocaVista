@@ -7,4 +7,6 @@ const { authenticateUser } = require("../middleware/auth");
 router.get("/:eventId/revenue", authenticateUser, getEventRevenue);
 router.post("/initiate", authenticateUser, initiatePayment);
 router.post("/verify-payment", authenticateUser, verifyPayment);
+
+
 module.exports = router;

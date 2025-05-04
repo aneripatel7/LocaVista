@@ -40,7 +40,8 @@ const createEvent = async (req, res) => {
 
         let eventImage = "https://via.placeholder.com/300x200?text=No+Image";
         if (req.file) {
-            eventImage = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+            eventImage =`${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+
         }
 
         const event = new Event({
@@ -214,24 +215,73 @@ const getPastEvents = async (req, res) => {
 
   const updateEvent = async (req, res) => {
     try {
-      const event = await Event.findById(req.params.id);
+        // Ensure the user is authenticated (this should be set in the middleware)
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ success: false, message: "Unauthorized. User not authenticated." });
+        }
+
+        // Find the event to update - check if the logged-in user is the organizer
+        const event = await Event.findOneAndUpdate(
+            { _id: req.params.id, organizer: req.user._id }, // Ensure the event belongs to the logged-in user
+            req.body, // Only update the fields provided in req.body
+            { new: true, runValidators: true } // Return the updated document and run validation on update
+        );
+
+        // If the event is not found or user is not authorized, return a 404 error
+        if (!event) {
+            return res.status(404).json({ success: false, message: "Event not found or not authorized to update this event." });
+        }
+
+        // Return the updated event
+        res.status(200).json({ success: true, event });
+    } catch (error) {
+        console.error("Error updating event:", error); // For debugging
+        res.status(500).json({ success: false, message: "Server error. Please try again later." });
+    }
+};
+  
+  
+  
+const getMyEvents = async (req, res) => {
+    try {
+      const events = await Event.find({ organizer: req.user._id });
+      res.status(200).json({ success: true, events });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  };
+  
+  // Controller for deleting an event
+  const deleteEvent = async (req, res) => {
+    try {
+      const event = await Event.findOneAndDelete({
+        _id: req.params.id,
+        organizer: req.user._id,
+      });
   
       if (!event) {
-        return res.status(404).json({ message: "Event not found" });
+        return res.status(404).json({ message: "Event not found or you're not authorized to delete it" });
       }
   
-      // Only the event's creator can update it
-      if (event.organizerId.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ message: "Unauthorized to update this event" });
-      }
-  
-      // Update fields
-      Object.assign(event, req.body);
-      await event.save();
-  
-      res.status(200).json({ message: "Event updated successfully", event });
+      res.status(200).json({ message: "Event deleted successfully" });
     } catch (err) {
-      console.error("Update error:", err);
+      console.error(err);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+
+const getPendingEvents = async (req, res) => {
+    try {
+      const events = await Event.find({ approved: false });
+      const formattedEvents = events.map(event => ({
+        ...event._doc,
+        date: formatDate(event.date),
+        eventImage: formatImagePath(event.eventImage),
+      }));
+      res.status(200).json({ success: true, events: formattedEvents });
+    } catch (error) {
+      console.error("Error fetching pending events:", error);
       res.status(500).json({ message: "Server error" });
     }
   };
@@ -246,5 +296,8 @@ module.exports = {
     getApprovedEvents,
     getEventsByCategory,
     getPastEvents,
-    updateEvent
+    updateEvent,
+    getMyEvents,
+    deleteEvent,
+    getPendingEvents
 };

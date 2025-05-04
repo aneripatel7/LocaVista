@@ -13,10 +13,14 @@ import Footer from "./components/Footer";
 import EventDetails from "./pages/EventDetails";
 import ContactOrganizer from "./pages/ContactOrganizer";
 import EventPayment from "./pages/EventPayment";
-// import OrganizerDashboard from "./pages/OrganizerDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
 import ContactUs from "./pages/ContactUs";
 import Services from "./pages/Services";
+import OrganizerDashboard from './pages/organizer/OrganizerDashboard';
+import CreateEvent from './pages/organizer/CreateEvent';
+import EditEvent from './pages/organizer/EditEvent';
+import RevenuePage from './pages/organizer/RevenuePage';
+import EventBookings from './pages/organizer/EventBookings';
+
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -52,9 +56,14 @@ const App = () => {
               <Route path="/event/:id" element={<EventDetails />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/event-payment/:id" element={<EventPayment />} />
-              <Route path="/adminDashboard" element={<AdminDashboard />} />
-              {/* <Route path="/organizerdashboard" element={<OrganizerDashboard />} /> */}
               <Route path="/contact-organizer/:organizerId" element={<ContactOrganizer />} />
+
+              <Route path="/organizer/dashboard" element={<OrganizerDashboard />} />
+              <Route path="/organizer/create" element={<CreateEvent />} />
+              <Route path="/edit-event/:id" element={<EditEvent />} />
+              <Route path="/organizer/revenue" element={<RevenuePage />} />
+              <Route path="/organizer/event-bookings" element={<EventBookings />} />
+
             </Routes>
           </main>
         </div>

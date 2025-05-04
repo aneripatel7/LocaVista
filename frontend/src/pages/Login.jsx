@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -59,7 +60,7 @@ const Login = () => {
         if (decodedUser.role === "admin") {
           navigate("/AdminDashboard");
         } else {
-          navigate("/OrganizerDashboard");
+          navigate('/organizer/dashboard'); 
         }
       }
     } catch (err) {

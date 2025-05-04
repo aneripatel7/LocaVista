@@ -4,8 +4,7 @@ const mongoose = require("mongoose");
 const validCategories = [
     "Festival", "Theatre", "Concerts", "Arts", "Health",
     "Gaming", "Tech & Innovation", "Business", "Sports",
-    "Food & Drink", "Comedy", "Book Fairs","Film & Media"
-];
+    "Food & Drink", "Comedy", "Book Fairs"];
 
 const EventSchema = new mongoose.Schema({
     title: { type: String, required: true },
@@ -44,10 +43,9 @@ const EventSchema = new mongoose.Schema({
     }
     
 }, { 
-    toJSON: { getters: true, virtuals: true }, // ✅ Ensures correct data when converting to JSON
+    toJSON: { getters: true, virtuals: true }, 
     toObject: { getters: true, virtuals: true }, 
-    id: false // ✅ Prevents duplicate "id" field (Mongoose automatically generates "_id")
+    id: false
 });
 
-// Export the model
 module.exports = mongoose.model("Event", EventSchema);

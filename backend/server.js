@@ -33,7 +33,6 @@ app.use("/api/payments", paymentRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
-
 app.get("/api/categories", (req, res) => {
   const categories = [
     "Festival", "Theatre", "Concerts", "Arts", "Health", "Gaming",

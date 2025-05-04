@@ -4,7 +4,7 @@ const User = require("../models/User");
 const Attendee = require("../models/Attendee");
 require('dotenv').config();
 const validator = require("validator");
-const sendEmail = require('../utils/sendEmail');
+const {sendEmail} = require('../utils/sendEmail'); 
 const ResetToken  = require('../models/PasswordResetOTP');
 const crypto = require('crypto');
 

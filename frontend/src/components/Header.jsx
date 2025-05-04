@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"; // Importing AuthContext for user info
 import defaultAvatar from "../assets/default-avatar.png";
 
 const Header = ({ toggleSidebar }) => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); // Access user and logout functions from AuthContext
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -14,22 +14,84 @@ const Header = ({ toggleSidebar }) => {
 
   const profileImage = user?.avatarUrl || defaultAvatar;
 
+  // Categories list (unchanged)
   const categories = [
     "Festival", "Theatre", "Concerts", "Arts",
     "Health", "Gaming", "Tech & Innovation",
     "Business", "Sports", "Food & Drink"
   ];
 
+  // Conditional rendering for the nav links based on the user role
+  const renderNavLinks = () => {
+    if (user?.role === "organizer") {
+      return (
+        <>
+          <Link to="/organizer/dashboard" className="text-gray-700 hover:text-black">
+            Dashboard
+          </Link>
+          <Link to="/organizer/create" className="text-gray-700 hover:text-black">
+            Create Event
+          </Link>
+          <Link to="/organizer/revenue" className="text-gray-700 hover:text-black">
+            Revenue Page
+          </Link>
+          <Link to="/organizer/event-bookings" className="text-gray-700 hover:text-black">
+            Event Bookings
+          </Link>
+        </>
+      );
+    } else if (user?.role === "attendee") {
+      return (
+        <>
+          <Link to="/" className="text-gray-700 hover:text-black">
+            Home
+          </Link>
+          <Link to="/services" className="text-gray-700 hover:text-black">
+            Services
+          </Link>
+          <Link to="/dashboard" className="text-gray-700 hover:text-black">
+            Dashboard
+          </Link>
+          <Link to="/contact" className="text-gray-700 hover:text-black">
+            Contact Us
+          </Link>
+        </>
+      );
+    } else {
+      // Links for unauthenticated users (show for both attendee and organizer)
+      return (
+        <>
+          <Link to="/" className="text-gray-700 hover:text-black">
+            Home
+          </Link>
+          <Link to="/services" className="text-gray-700 hover:text-black">
+            Services
+          </Link>
+          <Link to="/dashboard" className="text-gray-700 hover:text-black">
+            Dashboard
+          </Link>
+          <Link to="/contact" className="text-gray-700 hover:text-black">
+            Contact Us
+          </Link>
+        </>
+      );
+    }
+  };
+
   return (
     <header className="bg-white shadow-md p-4 flex items-center justify-between fixed w-full top-0 z-50">
       {/* Sidebar & Logo */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={toggleSidebar}
-          className="text-2xl text-gray-700 hover:text-black focus:outline-none"
-        >
-          ☰
-        </button>
+        {/* Hide toggleSidebar button when user is organizer or admin */}
+        {!(user?.role === "organizer" || user?.role === "admin") && (
+          <button
+            onClick={toggleSidebar}
+            className="text-2xl text-gray-700 hover:text-black focus:outline-none"
+          >
+            ☰
+          </button>
+        )}
+
         <Link to="/" className="text-2xl font-bold text-gray-900">
           LocaVista
         </Link>
@@ -37,19 +99,8 @@ const Header = ({ toggleSidebar }) => {
 
       {/* Nav Links */}
       <nav className="hidden md:flex space-x-6 items-center">
-        <Link to="/" className="text-gray-700 hover:text-black">
-          Home
-        </Link>
-        <Link to="/services" className="text-gray-700 hover:text-black">
-          Services
-        </Link>
-        <Link to="/dashboard" className="text-gray-700 hover:text-black">
-          Dashboard
-        </Link>
-        <Link to="/contact" className="text-gray-700 hover:text-black">
-          Contact Us
-        </Link>
-
+        {/* Common Links for All Users (Attendee or Unauthenticated) */}
+        {renderNavLinks()}
       </nav>
 
       {/* Profile Icon or Sign In */}

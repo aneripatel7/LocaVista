@@ -17,9 +17,9 @@ const Home = () => {
       try {
         let eventData;
         if (category) {
-          eventData = await fetchEventsByCategory(category); // 🔹 Fetch category-specific events
+          eventData = await fetchEventsByCategory(category); 
         } else {
-          eventData = await fetchEvents(); // 🔹 Fetch all events
+          eventData = await fetchEvents(); 
         }
 
         // 🔹 Filter only upcoming and ongoing events
